@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% block title %}Receita e Distribuição | HM de Finanças{% endblock %}
+
+{% block content %}
+<div class="topbar" style="margin-bottom: 2rem;">
+    <div class="page-title">
+        <h1>Receita e Distribuição</h1>
+        <p>Análise de fluxo de caixa e panorama de despesas mensais</p>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Line Chart Card -->
+    <div class="dash-card" style="padding: 2rem; background: white; min-height: 400px;">
+        <h3 style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--text-main);">Evolução Histórica da Receita</h3>
+        <div style="position: relative; height: 320px; width: 100%;">
+            <canvas id="lineChart"></canvas>
+        </div>
+    </div>
+    
+    <!-- Pie Chart Card -->
+    <div class="dash-card" style="padding: 2rem; background: white; min-height: 400px; display: flex; flex-direction: column;">
+        <h3 style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--text-main);">Distribuição de Despesas</h3>
+        <div style="position: relative; height: 260px; width: 100%; flex-grow: 1; display:flex; justify-content:center; align-items:center;">
+            <canvas id="pieChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Bottom Stats Grid -->
+<div class="dashboard-grid" style="grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+    <article class="dash-card" style="padding: 1.5rem;">
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.5rem; font-weight: 500;">
+            Lucro Líquido ({{ mes_atual }})
+        </p>
+        <p style="color: var(--text-main); font-size: 1.4rem; font-weight: 600; margin: 0;">
+            R$ {{ lucro_liquido|floatformat:2 }}
+        </p>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 6px 0 0;">Entradas totais menos Despesas totais</p>
+    </article>
+    
+    <article class="dash-card" style="padding: 1.5rem;">
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.5rem; font-weight: 500;">
+            Ticket Médio
+        </p>
+        <p style="color: var(--text-main); font-size: 1.4rem; font-weight: 600; margin: 0;">
+            R$ {{ ticket_medio|floatformat:2 }}
+        </p>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 6px 0 0;">Por cliente passante ativo</p>
+    </article>
+
+    <article class="dash-card" style="padding: 1.5rem;">
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.5rem; font-weight: 500;">
+            Referência
+        </p>
+        <p style="color: var(--text-main); font-size: 1.4rem; font-weight: 600; margin: 0;">
+            {{ mes_atual }}
+        </p>
+        <p style="font-size: 0.8rem; color: var(--success); margin: 6px 0 0;">Fechamento de caixa contabilizado</p>
+    </article>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Line Chart
+        const ctxLine = document.getElementById('lineChart').getContext('2d');
+        new Chart(ctxLine, {
+            type: 'line',
+            data: {
+                labels: {{ line_labels|safe }},
+                datasets: [{
+                    label: 'Receita Confirmada',
+                    data: {{ line_data|safe }},
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#3b82f6',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    fill: true,
+                    tension: 0.4 // curvatura bonita
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20,
+                            font: { family: "'Outfit', sans-serif" }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: '#0f172a',
+                        titleFont: { family: "'Outfit', sans-serif" },
+                        bodyFont: { family: "'Outfit', sans-serif" },
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) {
+                                return ' R$ ' + context.parsed.y.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: {
+                        beginAtZero: true,
+                        grid: { borderDash: [5, 5], color: '#e2e8f0' },
+                        ticks: {
+                            callback: function(value) { return 'R$ ' + value; }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Donut/Pie Chart
+        const ctxPie = document.getElementById('pieChart').getContext('2d');
+        const pieLabels = {{ pie_labels|safe }};
+        const pieData = {{ pie_data|safe }};
+        
+        // Cores padrão modernas
+        const chartColors = [
+            '#eab308', /* yellow */
+            '#ef4444', /* red */
+            '#3b82f6', /* blue */
+            '#a855f7', /* purple */
+            '#22c55e', /* green */
+            '#f97316', /* orange */
+            '#06b6d4', /* cyan */
+            '#ec4899', /* pink */
+        ];
+
+        new Chart(ctxPie, {
+            type: 'doughnut',
+            data: {
+                labels: pieLabels,
+                datasets: [{
+                    data: pieData,
+                    backgroundColor: chartColors,
+                    borderWidth: 2,
+                    borderColor: '#ffffff',
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%', // deixa o donut mais fino
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 15,
+                            font: { size: 11, family: "'Outfit', sans-serif" }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: '#0f172a',
+                        padding: 10,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) { label += ': '; }
+                                if (context.parsed !== null) {
+                                    label += new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(context.parsed);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

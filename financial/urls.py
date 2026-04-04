@@ -12,4 +12,6 @@ urlpatterns = [
     path('transfers/add/', views.TransferCreateView.as_view(), name='transfer_add'),
     path('fixed-costs/', views.FixedCostListView.as_view(), name='fixedcost_list'),
     path('fixed-costs/add/', views.FixedCostCreateView.as_view(), name='fixedcost_add'),
+    path('relatorios/evolucao/', views.EvolucaoView.as_view(), name='relatorio_evolucao'),
+    path('relatorios/receita-distribuicao/', views.ReceitaDistribuicaoView.as_view(), name='relatorio_distribuicao'),
 ]

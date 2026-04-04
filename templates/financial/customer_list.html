@@ -1,38 +1,149 @@
 {% extends 'base.html' %}
-{% block title %}Clientes | HM de Finanças{% endblock %}
+{% block title %}Clientes | HM Admin{% endblock %}
 
 {% block content %}
-<header>
-    <h1>Meus Clientes</h1>
-    <a href="{% url 'customer_add' %}" role="button">+ Novo Cliente</a>
-</header>
+<div class="topbar" style="margin-bottom: 1.5rem;">
+    <div class="page-title">
+        <h1>Clientes</h1>
+        <p>Gerencie todos os clientes e suas compras/pendências</p>
+    </div>
+    
+    <div>
+        <a href="{% url 'customer_add' %}" class="btn-pro" style="background:#0f172a; color:white; border-color:#0f172a;">
+            + Novo Cliente
+        </a>
+    </div>
+</div>
 
-<article class="card">
-    <table class="striped">
-        <thead>
-            <tr>
-                <th>Nome</th>
-                <th>Telefone</th>
-                <th>Total Devido</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for customer in customers %}
-            <tr>
-                <td>{{ customer.name }}</td>
-                <td>{{ customer.phone|default:"-" }}</td>
-                <td class="text-danger">R$ {{ customer.total_debt }}</td>
-                <td>
-                    <a href="#">Ver detalhes</a>
-                </td>
-            </tr>
+<!-- Search Bar -->
+<div style="background: white; padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); display: flex; gap: 10px; align-items: center; margin-bottom: 1.5rem;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    <!-- Use standard form for GET request to pass ?q= -->
+    <form method="get" action="{% url 'customer_list' %}" style="margin: 0; width: 100%;">
+        <input type="text" name="q" value="{{ search_query }}" placeholder="Buscar cliente..." style="border: none; margin: 0; padding: 0.5rem; background: transparent; width: 100%; box-shadow: none; outline: none; font-family: 'Outfit';">
+    </form>
+</div>
+
+<!-- Stats Grid -->
+<div class="dashboard-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 2rem;">
+    <!-- Card 1 -->
+    <article class="dash-card" style="text-align: center; min-height: 110px; padding: 1.2rem;">
+        <p class="dash-card-value" style="color: #0f172a; margin: 0;">{{ total_customers|default:"0" }}</p>
+        <p class="dash-card-subtitle" style="color: var(--text-muted)">Total de clientes</p>
+    </article>
+    <!-- Card 2 -->
+    <article class="dash-card" style="text-align: center; min-height: 110px; padding: 1.2rem;">
+        <p class="dash-card-value" style="color: #64748b; margin: 0;">{{ customers_clean|default:"0" }}</p>
+        <p class="dash-card-subtitle" style="color: var(--text-muted)">Sem dívidas ativas</p>
+    </article>
+    <!-- Card 3 -->
+    <article class="dash-card" style="text-align: center; min-height: 110px; padding: 1.2rem;">
+        <p class="dash-card-value" style="color: #0f172a; margin: 0;">{{ customers_debt|default:"0" }}</p>
+        <p class="dash-card-subtitle" style="color: var(--text-muted)">Com parcelas pendentes</p>
+    </article>
+</div>
+
+<!-- Month Navigation Placeholder (visual only to match Gestify) -->
+<div style="background: white; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; font-weight: 500;">
+    <span style="color: var(--text-muted); cursor: pointer;">&lt;</span>
+    <span style="color: var(--text-main);">Listagem Geral</span>
+    <span style="color: var(--text-muted); cursor: pointer;">&gt;</span>
+</div>
+
+<!-- Customers Accordion List -->
+<div class="customer-list-container" style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border-color); padding: 1rem 1.5rem;">
+    {% for customer in customers %}
+    <details class="customer-accordion" style="border-bottom: 1px solid var(--border-color); padding: 0.5rem 0;">
+        <summary style="display: flex; justify-content: space-between; align-items: center; list-style: none; cursor: pointer; padding: 0.5rem 0;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <svg class="chevron-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" style="transition: transform 0.2s;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                <div>
+                    <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-main); font-weight: 500;">{{ customer.name }}</h3>
+                    <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+                        {% if customer.total_debt > 0 %}
+                            <span style="color: var(--danger); font-weight: 600;">{{ customer.sales.count }} vendas</span>
+                            &nbsp;<span style="color: var(--success); font-weight: 600; opacity: 0.8;">{{ customer.sales.count }} ativas</span>
+                            &nbsp;<span style="font-weight: 600; color: var(--danger);">R$ {{ customer.total_debt }}</span>/pendente
+                        {% else %}
+                            <span style="color: var(--text-muted);">{{ customer.sales.count }} vendas</span>
+                            &nbsp;<span style="color: var(--success); font-weight: 600;">R$ 0,00</span>/pendente
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            <div style="color: #94a3b8; font-weight: bold; letter-spacing: 2px;">•••</div>
+        </summary>
+        
+        <!-- Accordion Body -->
+        <div style="padding: 1rem 0 1rem 3rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h4 style="margin: 0; font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Vendas Cadastradas ({{ customer.sales.count }})</h4>
+                <a href="{% url 'sale_add' %}" style="background: #0f172a; color: white; padding: 0.4rem 1rem; border-radius: 8px; font-size: 0.8rem; font-weight: 500; text-decoration: none;">+ Adicionar Venda</a>
+            </div>
+            
+            {% for sale in customer.sales.all %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 0; border-top: 1px solid var(--border-color);">
+                <div>
+                    <h5 style="margin: 0; font-weight: 600; color: var(--text-main); font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+                        Venda #{{ sale.id }} 
+                        <span style="font-size:0.7rem; background:#dcfce7; color:#166534; padding:0.2rem 0.6rem; border-radius:12px;">Em andamento</span>
+                        <span style="font-size:0.7rem; color:var(--primary); background:#e0e7ff; padding:0.2rem 0.6rem; border-radius:12px; display: flex; align-items: center; gap: 4px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            {{ sale.payment_type }}
+                        </span>
+                    </h5>
+                    <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">
+                        <strong style="color: var(--text-main); font-size: 0.9rem;">R$ {{ sale.total_amount }}</strong> &nbsp;|&nbsp; 
+                        Parcela 1: {{ sale.first_due_date|date:"d/M/Y" }} &nbsp;|&nbsp; 
+                        Data Base: {{ sale.sale_date|date:"d/M/Y" }}
+                    </p>
+                </div>
+                <div style="display: flex; gap: 16px;">
+                    <!-- Action Icons -->
+                    <a href="javascript:void(0)" style="color: #94a3b8; outline: none; border: none; background: transparent; padding: 0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    </a>
+                    <a href="javascript:void(0)" style="color: #94a3b8; outline: none; border: none; background: transparent; padding: 0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="16 3 21 8 8 21 3 21 3 16 16 3"></polygon></svg>
+                    </a>
+                    <a href="javascript:void(0)" style="color: var(--danger); outline: none; border: none; background: transparent; padding: 0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </a>
+                </div>
+            </div>
             {% empty %}
-            <tr>
-                <td colspan="4" class="text-center">Nenhum cliente cadastrado ainda.</td>
-            </tr>
+            <p style="font-size: 0.85rem; color: var(--text-muted); padding: 1rem 0;">Nenhuma venda registrada para este cliente.</p>
             {% endfor %}
-        </tbody>
-    </table>
-</article>
+        </div>
+    </details>
+    {% empty %}
+    <div style="text-align: center; padding: 4rem 1rem; color: var(--text-muted);">
+        {% if search_query %}
+            <p>Nenhum cliente encontrado com a busca "{{ search_query }}".</p>
+            <a href="{% url 'customer_list' %}" style="color: var(--primary);">Limpar filtro</a>
+        {% else %}
+            <p>Sua carteira de clientes está vazia.</p>
+            <a href="{% url 'customer_add' %}" style="color: var(--primary);">Cadastre o primeiro cliente</a>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+/* Reset form defaults */
+form input:focus {
+    box-shadow: none !important;
+}
+/* Reset details marker */
+details.customer-accordion > summary {
+    list-style: none;
+}
+details.customer-accordion > summary::-webkit-details-marker {
+    display: none;
+}
+/* Rotate chevron */
+details.customer-accordion[open] > summary .chevron-icon {
+    transform: rotate(180deg);
+}
+</style>
 {% endblock %}
