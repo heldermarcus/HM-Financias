@@ -7,9 +7,9 @@ class User(AbstractUser):
         ('pro', 'Pro'),
     )
     PLAN_STATUS_CHOICES = (
-        ('active', 'Active'),
-        ('cancelled', 'Cancelled'),
-        ('suspended', 'Suspended'),
+        ('active', 'Ativo'),
+        ('cancelled', 'Cancelado'),
+        ('suspended', 'Suspenso'),
     )
 
     phone = models.CharField(max_length=20, blank=True)

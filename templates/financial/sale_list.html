@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}Vendas | HM de Financias{% endblock %}
+
+{% block content %}
+<div class="topbar" style="margin-bottom: 1.5rem;">
+    <div class="page-title">
+        <h1>Minhas Vendas</h1>
+        <p>Acompanhe e gerencie todas as vendas, com ou sem cliente atrelado.</p>
+    </div>
+    
+    <div>
+        <a href="{% url 'sale_add' %}" class="btn-pro" style="background:#0f172a; color:white; border-color:#0f172a;">
+            + Nova Venda
+        </a>
+    </div>
+</div>
+
+<div style="background: white; padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); display: flex; gap: 10px; align-items: center; margin-bottom: 1.5rem;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    <form method="get" action="{% url 'sale_list' %}" style="margin: 0; width: 100%; display: flex; gap: 1rem;">
+        <input type="text" name="q" value="{{ search_query }}" placeholder="Buscar por cliente ou ID..." style="border: none; margin: 0; padding: 0.5rem; background: transparent; width: 100%; box-shadow: none; outline: none; font-family: 'Outfit';">
+        <select name="status" style="width: auto; border: 1px solid var(--border-color); padding: 0.3rem 1rem; border-radius: 6px;" onchange="this.form.submit()">
+            <option value="">Todos os status</option>
+            <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pendente</option>
+            <option value="partial" {% if request.GET.status == 'partial' %}selected{% endif %}>Parcial</option>
+            <option value="paid" {% if request.GET.status == 'paid' %}selected{% endif %}>Pago</option>
+            <option value="overdue" {% if request.GET.status == 'overdue' %}selected{% endif %}>Atrasado</option>
+        </select>
+    </form>
+</div>
+
+<div class="dashboard-grid" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 2rem;">
+    <article class="dash-card" style="text-align: center; min-height: 110px; padding: 1.2rem;">
+        <p class="dash-card-value" style="color: #0f172a; margin: 0;">{{ total_sales|default:"0" }}</p>
+        <p class="dash-card-subtitle" style="color: var(--text-muted)">Total de Vendas</p>
+    </article>
+    <article class="dash-card" style="text-align: center; min-height: 110px; padding: 1.2rem;">
+        <p class="dash-card-value" style="color: var(--primary); margin: 0;">R$ {{ total_to_receive|default:"0,00" }}</p>
+        <p class="dash-card-subtitle" style="color: var(--text-muted)">A Receber no Geral</p>
+    </article>
+</div>
+
+<div class="customer-list-container" style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border-color); padding: 1rem 1.5rem;">
+    {% for sale in sales %}
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 0; border-bottom: 1px solid var(--border-color);">
+        <div>
+            <h5 style="margin: 0; font-weight: 600; color: var(--text-main); font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                Venda #{{ sale.id }} 
+                {% if sale.status == 'paid' %}
+                    <span style="font-size:0.7rem; background:#dcfce7; color:#166534; padding:0.2rem 0.6rem; border-radius:12px;">Pago</span>
+                {% elif sale.status == 'partial' %}
+                    <span style="font-size:0.7rem; background:#fef08a; color:#854d0e; padding:0.2rem 0.6rem; border-radius:12px;">Parte Paga</span>
+                {% elif sale.status == 'overdue' %}
+                    <span style="font-size:0.7rem; background:#fee2e2; color:#991b1b; padding:0.2rem 0.6rem; border-radius:12px;">Atrasado</span>
+                {% else %}
+                    <span style="font-size:0.7rem; background:#f1f5f9; color:#475569; padding:0.2rem 0.6rem; border-radius:12px;">Pendente</span>
+                {% endif %}
+            </h5>
+            <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;">
+                {% if sale.customer %}
+                    <a href="{% url 'customer_list' %}?q={{ sale.customer.name }}" style="color: var(--primary); text-decoration: none; font-weight: 500;">{{ sale.customer.name }}</a>
+                {% else %}
+                    <span style="background:var(--bg-card); padding: 0.1rem 0.5rem; border-radius:4px;">Avulso</span>
+                {% endif %}
+                &nbsp;|&nbsp; <strong style="color: var(--text-main);">R$ {{ sale.total_amount }}</strong> 
+                &nbsp;|&nbsp; {{ sale.get_payment_type_display }} ({{ sale.installments_count }}x)
+                &nbsp;|&nbsp; Data: {{ sale.sale_date|date:"d/M/Y" }}
+            </p>
+        </div>
+        <div style="display: flex; gap: 16px;">
+            <a title="Ver Parcelas/Baixa" href="{% url 'installment_list' %}?sale_id={{ sale.id }}" style="color: var(--primary); outline: none; border: none; background: transparent; padding: 0;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            </a>
+            <a title="Editar Venda" href="{% url 'sale_edit' sale.id %}" style="color: #94a3b8; outline: none; border: none; background: transparent; padding: 0;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="16 3 21 8 8 21 3 21 3 16 16 3"></polygon></svg>
+            </a>
+            <a title="Remover Venda" href="{% url 'sale_delete' sale.id %}" style="color: var(--danger); outline: none; border: none; background: transparent; padding: 0;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </a>
+        </div>
+    </div>
+    {% empty %}
+    <div style="text-align: center; padding: 4rem 1rem; color: var(--text-muted);">
+        <p>Nenhuma venda foi encontrada.</p>
+        <a href="{% url 'sale_add' %}" style="color: var(--primary);">Realize a primeira venda do sistema</a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

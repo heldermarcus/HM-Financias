@@ -4,13 +4,13 @@ from core.models import User, Store, Account
 
 class Category(models.Model):
     TYPE_CHOICES = (
-        ('income', 'Income'),
-        ('expense', 'Expense'),
+        ('income', 'Entrada'),
+        ('expense', 'Saída'),
     )
     ACCOUNT_TYPE_CHOICES = (
         ('PF', 'PF'),
         ('PJ', 'PJ'),
-        ('both', 'Both'),
+        ('both', 'Ambas'),
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=100)
@@ -24,14 +24,19 @@ class Category(models.Model):
         return self.name
 
 class Customer(models.Model):
+    ACCOUNT_TYPE_CHOICES = (
+        ('PF', 'PF'),
+        ('PJ', 'PJ'),
+    )
     store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='customers')
-    name = models.CharField(max_length=200)
-    cpf = models.CharField(max_length=14, null=True, blank=True)
-    phone = models.CharField(max_length=20, null=True, blank=True)
-    address = models.TextField(null=True, blank=True)
+    account_type = models.CharField(max_length=2, choices=ACCOUNT_TYPE_CHOICES, default='PJ')
+    name = models.CharField(max_length=200, verbose_name="Nome")
+    cpf = models.CharField(max_length=14, null=True, blank=True, verbose_name="CPF")
+    phone = models.CharField(max_length=20, null=True, blank=True, verbose_name="Telefone")
+    address = models.TextField(null=True, blank=True, verbose_name="Endereço")
     total_debt = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     is_blocked = models.BooleanField(default=False)
-    notes = models.TextField(null=True, blank=True)
+    notes = models.TextField(null=True, blank=True, verbose_name="Observações")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -40,23 +45,26 @@ class Customer(models.Model):
 
 class Transaction(models.Model):
     TYPE_CHOICES = (
-        ('income', 'Income'),
-        ('expense', 'Expense'),
-        ('transfer', 'Transfer'),
+        ('income', 'Entrada'),
+        ('expense', 'Saída'),
+        ('transfer', 'Transferência'),
     )
     PAYMENT_METHOD_CHOICES = (
-        ('cash', 'Cash'),
-        ('pix', 'PIX'),
-        ('card', 'Card'),
-        ('check', 'Check'),
-        ('promissory', 'Promissory'),
-        ('installment', 'Installment'),
+        ('pix', 'Pix'),
+        ('dinheiro', 'Dinheiro'),
+        ('cartao_debito', 'Cartão no Débito'),
+        ('cartao_credito', 'Cartão no Crédito'),
+        ('check', 'Cheque'),
+        ('promissory', 'Promissória'),
+        ('boleto', 'Boleto'),
+        ('transferencia', 'Transferência Bancária'),
+        ('installment', 'Parcelamento'),
     )
     
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='transactions')
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
     customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True)
-    type = models.CharField(max_length=10, choices=TYPE_CHOICES)
+    type = models.CharField(max_length=10, choices=TYPE_CHOICES, verbose_name="Tipo")
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     description = models.CharField(max_length=500, blank=True)
     date = models.DateField()
@@ -69,27 +77,38 @@ class Transaction(models.Model):
 
 class Sale(models.Model):
     PAYMENT_TYPE_CHOICES = (
-        ('check', 'Check'),
-        ('promissory', 'Promissory'),
-        ('installment', 'Installment'),
+        ('pix', 'Pix'),
+        ('dinheiro', 'Dinheiro'),
+        ('cartao_debito', 'Cartão no Débito'),
+        ('cartao_credito', 'Cartão no Crédito'),
+        ('check', 'Cheque'),
+        ('promissory', 'Promissória'),
+        ('boleto', 'Boleto'),
+        ('transferencia', 'Transferência Bancária'),
+        ('installment', 'Parcelamento'),
     )
     STATUS_CHOICES = (
-        ('pending', 'Pending'),
-        ('partial', 'Partial'),
-        ('paid', 'Paid'),
-        ('overdue', 'Overdue'),
+        ('pending', 'Pendente'),
+        ('partial', 'Parcial'),
+        ('paid', 'Pago'),
+        ('overdue', 'Atrasado'),
+    )
+    ACCOUNT_TYPE_CHOICES = (
+        ('PF', 'PF'),
+        ('PJ', 'PJ'),
     )
     store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='sales')
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='sales')
-    total_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    account_type = models.CharField(max_length=2, choices=ACCOUNT_TYPE_CHOICES, default='PJ')
+    customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True, related_name='sales', verbose_name="Cliente")
+    total_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Valor Total")
     paid_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     remaining_amount = models.DecimalField(max_digits=12, decimal_places=2)
-    installments_count = models.IntegerField(default=1)
-    payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPE_CHOICES)
+    installments_count = models.IntegerField(default=1, verbose_name="Número de Parcelas")
+    payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPE_CHOICES, verbose_name="Tipo de Pagamento")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    sale_date = models.DateField()
-    first_due_date = models.DateField()
-    notes = models.TextField(null=True, blank=True)
+    sale_date = models.DateField(verbose_name="Data da Venda")
+    first_due_date = models.DateField(verbose_name="Data da Primeira Parcela")
+    notes = models.TextField(null=True, blank=True, verbose_name="Observações")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -101,9 +120,9 @@ class Sale(models.Model):
 
 class SaleInstallment(models.Model):
     STATUS_CHOICES = (
-        ('pending', 'Pending'),
-        ('paid', 'Paid'),
-        ('overdue', 'Overdue'),
+        ('pending', 'Pendente'),
+        ('paid', 'Pago'),
+        ('overdue', 'Atrasado'),
     )
     sale = models.ForeignKey(Sale, on_delete=models.CASCADE, related_name='installments')
     installment_number = models.IntegerField()
@@ -153,7 +172,7 @@ class Transfer(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
 
 # Signals
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from dateutil.relativedelta import relativedelta
 
@@ -187,8 +206,36 @@ def update_installment_and_sale(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Sale)
 def update_customer_debt(sender, instance, created, **kwargs):
     customer = instance.customer
+    if not customer:
+        return
     from django.db.models import Sum
     total = customer.sales.aggregate(Sum('remaining_amount'))['remaining_amount__sum'] or 0
-    if customer.total_debt != total:
+    if hasattr(customer, 'total_debt') and customer.total_debt != total:
         customer.total_debt = total
         customer.save(update_fields=['total_debt'])
+
+@receiver(post_delete, sender=Sale)
+def update_customer_debt_on_delete(sender, instance, **kwargs):
+    customer = instance.customer
+    if not customer:
+        return
+    from django.db.models import Sum
+    total = customer.sales.aggregate(Sum('remaining_amount'))['remaining_amount__sum'] or 0
+    if hasattr(customer, 'total_debt') and customer.total_debt != total:
+        customer.total_debt = total
+        customer.save(update_fields=['total_debt'])
+
+class TransactionHistory(models.Model):
+    transaction_reference_id = models.IntegerField(verbose_name="ID da Transação Original")
+    account_type = models.CharField(max_length=4) # PF or PJ
+    field_changed = models.CharField(max_length=100)
+    old_value = models.TextField(null=True, blank=True)
+    new_value = models.TextField(null=True, blank=True)
+    edited_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    edited_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-edited_at']
+
+    def __str__(self):
+        return f"Rev {self.id} (Trans: {self.transaction_reference_id}) - {self.field_changed}"

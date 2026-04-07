@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
-{% block title %}Novo Cliente | HM de Finanças{% endblock %}
+{% block title %}{% if object %}Editar Cliente{% else %}Novo Cliente{% endif %} | HM de Financias{% endblock %}
 
 {% block content %}
 <article class="card" style="max-width: 600px; margin: 0 auto;">
     <header>
-        <h2>Novo Cliente</h2>
-        <p>Cadastre um cliente para vender a prazo.</p>
+        <h2>{% if object %}Editar Cliente{% else %}Novo Cliente{% endif %}</h2>
+        <p>{% if object %}Atualize os dados cadastrais deste cliente.{% else %}Cadastre um cliente para vender a prazo.{% endif %}</p>
     </header>
 
     <form method="post">

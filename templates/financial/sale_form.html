@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
-{% block title %}Venda Parcelada | HM de Finanças{% endblock %}
+{% block title %}{% if object %}Editar Venda{% else %}Nova Venda{% endif %} | HM de Financias{% endblock %}
 
 {% block content %}
 <article class="card" style="max-width: 600px; margin: 0 auto;">
     <header>
-        <h2>Nova Venda Parcelada</h2>
-        <p>Promissória, Cheque ou Crediário</p>
+        <h2>{% if object %}Editar Venda #{{ object.id }}{% else %}Nova Venda{% endif %}</h2>
+        <p>{% if object %}Altere os dados informados.¹{% else %}Venda à vista ou parcelada (Cliente Opcional).{% endif %}</p>
     </header>
 
     <form method="post">
@@ -13,9 +13,42 @@
         {{ form.as_p }}
         
         <div class="grid">
-            <a href="{% url 'dashboard' %}" role="button" class="outline secondary">Cancelar</a>
+            <a href="{% url 'sale_list' %}" role="button" class="outline secondary">Cancelar</a>
             <button type="submit">Salvar Venda</button>
         </div>
     </form>
 </article>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const paymentTypeField = document.getElementById('id_payment_type');
+    const installmentsField = document.getElementById('id_installments_count');
+    const firstDueDateField = document.getElementById('id_first_due_date');
+
+    const toggleFields = () => {
+        const val = paymentTypeField.value;
+        const vistaModes = ['pix', 'dinheiro', 'cartao_debito', 'cartao_credito', 'transferencia'];
+        
+        // Encontrar os elementos P de cada campo no Django as_p
+        const installmentsParent = installmentsField ? installmentsField.closest('p') : null;
+        const firstDueDateParent = firstDueDateField ? firstDueDateField.closest('p') : null;
+
+        if (vistaModes.includes(val)) {
+            if (installmentsParent) installmentsParent.style.display = 'none';
+            if (firstDueDateParent) firstDueDateParent.style.display = 'none';
+            if (installmentsField) installmentsField.value = 1;
+        } else {
+            if (installmentsParent) installmentsParent.style.display = 'block';
+            if (firstDueDateParent) firstDueDateParent.style.display = 'block';
+        }
+    };
+
+    if (paymentTypeField) {
+        paymentTypeField.addEventListener('change', toggleFields);
+        toggleFields(); // Chamada inicial
+    }
+});
+</script>
 {% endblock %}

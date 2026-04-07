@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Excluir Venda | HM de Financias{% endblock %}
+
+{% block content %}
+<article class="card" style="max-width: 600px; margin: 0 auto; text-align: center;">
+    <header style="background: var(--danger); color: white;">
+        <h2>Deseja realmente remover esta Venda (#{{ object.id }})?</h2>
+    </header>
+
+    <div style="padding: 2rem 0;">
+        <p style="font-size: 1.1rem; color: var(--text-main);">Você está prestes a excluir a venda no valor de <strong>R$ {{ object.total_amount }}</strong>.</p>
+        <p style="font-size: 0.9rem; color: var(--text-muted);">Atenção: Excluir esta venda fará com que todas as parcelas "Pendentes" relacionadas a ela deixem de existir. Se houver parcelas "Pagas", o sistema abortará a deleção automaticamente para preservar a integridade do seu caixa.</p>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="grid" style="margin-top: 1rem;">
+            <a href="{% url 'sale_list' %}" role="button" class="outline secondary">Cancelar</a>
+            <button type="submit" style="background: var(--danger); border-color: var(--danger);">Sim, Remover Venda</button>
+        </div>
+    </form>
+</article>
+{% endblock %}

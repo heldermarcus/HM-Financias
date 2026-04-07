@@ -8,4 +8,5 @@ urlpatterns = [
     path('subscription/', views.subscription_view, name='subscription'),
     path('checkout/<str:plan>/', views.create_checkout, name='create_checkout'),
     path('webhook/abacatepay/', views.webhook_abacatepay, name='webhook_abacatepay'),
+    path('switch-account/<str:type_code>/', views.switch_account_view, name='switch_account'),
 ]

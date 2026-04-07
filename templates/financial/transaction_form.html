@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
-{% block title %}Nova Transação | HM de Finanças{% endblock %}
+{% block title %}{% if object %}Editar{% else %}Nova{% endif %} Transação | HM de Financias{% endblock %}
 
 {% block content %}
 <div class="topbar" style="margin-bottom: 2rem;">
     <div class="page-title">
-        <h1>Nova Transação</h1>
-        <p>Registre entradas (Receitas) ou saídas (Despesas) no seu caixa</p>
+        <h1>{% if object %}Editar{% else %}Nova{% endif %} Transação</h1>
+        <p>{% if object %}Atualize os detalhes da sua transação comercial ou pessoal{% else %}Registre entradas (Receitas) ou saídas (Despesas) no seu caixa{% endif %}</p>
     </div>
 </div>
 
@@ -17,7 +17,7 @@
             
             <!-- Linha Cheia -->
             <div style="grid-column: 1 / -1;">
-                <label style="font-weight: 600; color: var(--text-main); font-size: 0.95rem; display: block; margin-bottom: 0.5rem;">{{ form.type.label }}</label>
+                <label style="font-weight: 600; color: var(--text-main); font-size: 0.95rem; display: block; margin-bottom: 0.5rem;">Tipo</label>
                 {{ form.type }}
                 <div style="color: var(--danger); font-size: 0.8rem;">{{ form.type.errors }}</div>
             </div>
@@ -73,9 +73,9 @@
         
         <!-- Botões de Ação Modernos -->
         <div style="display: flex; gap: 1rem; justify-content: flex-end; align-items: center;">
-            <a href="{% url 'dashboard' %}" style="color: var(--text-muted); font-weight: 500; text-decoration: none; transition: color 0.2s;">Cancelar Retorno</a>
+            <a href="{% url 'transaction_list' %}" style="color: var(--text-muted); font-weight: 500; text-decoration: none; transition: color 0.2s;">Cancelar</a>
             <button type="submit" style="background-color: var(--primary); color: white; border: none; padding: 0.6rem 2rem; border-radius: 30px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; box-shadow: 0 4px 6px -1px rgb(59 130 246 / 0.3);">
-                Salvar Transação
+                {% if object %}Salvar Alterações{% else %}Salvar Transação{% endif %}
             </button>
         </div>
     </form>

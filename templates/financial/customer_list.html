@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Clientes | HM Admin{% endblock %}
+{% block title %}Clientes | HM de Financias{% endblock %}
 
 {% block content %}
 <div class="topbar" style="margin-bottom: 1.5rem;">
@@ -71,7 +71,17 @@
                     </p>
                 </div>
             </div>
-            <div style="color: #94a3b8; font-weight: bold; letter-spacing: 2px;">•••</div>
+            <div style="display: flex; gap: 16px; align-items: center;" onclick="event.preventDefault(); event.stopPropagation();">
+                <a title="Duplicar Cliente" href="{% url 'customer_add' %}?duplicate_id={{ customer.id }}" style="color: #94a3b8; padding: 0;" onclick="window.location.href=this.href;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                </a>
+                <a title="Editar Cadastro" href="{% url 'customer_edit' customer.id %}" style="color: #94a3b8; padding: 0;" onclick="window.location.href=this.href;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="16 3 21 8 8 21 3 21 3 16 16 3"></polygon></svg>
+                </a>
+                <a title="Excluir Cliente" href="{% url 'customer_delete' customer.id %}" style="color: var(--danger); padding: 0;" onclick="window.location.href=this.href;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </a>
+            </div>
         </summary>
         
         <!-- Accordion Body -->
@@ -100,13 +110,13 @@
                 </div>
                 <div style="display: flex; gap: 16px;">
                     <!-- Action Icons -->
-                    <a href="javascript:void(0)" style="color: #94a3b8; outline: none; border: none; background: transparent; padding: 0;">
+                    <a title="Duplicar Venda" href="{% url 'sale_add' %}?duplicate_id={{ sale.id }}&next={% url 'customer_list' %}" style="color: #94a3b8; outline: none; border: none; background: transparent; padding: 0;" onclick="event.preventDefault(); event.stopPropagation(); window.location.href=this.href;">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                     </a>
-                    <a href="javascript:void(0)" style="color: #94a3b8; outline: none; border: none; background: transparent; padding: 0;">
+                    <a title="Editar Venda" href="{% url 'sale_edit' sale.id %}?next={% url 'customer_list' %}" style="color: #94a3b8; outline: none; border: none; background: transparent; padding: 0;" onclick="event.preventDefault(); event.stopPropagation(); window.location.href=this.href;">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="16 3 21 8 8 21 3 21 3 16 16 3"></polygon></svg>
                     </a>
-                    <a href="javascript:void(0)" style="color: var(--danger); outline: none; border: none; background: transparent; padding: 0;">
+                    <a title="Excluir Venda" href="{% url 'sale_delete' sale.id %}?next={% url 'customer_list' %}" style="color: var(--danger); outline: none; border: none; background: transparent; padding: 0;" onclick="event.preventDefault(); event.stopPropagation(); window.location.href=this.href;">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                     </a>
                 </div>

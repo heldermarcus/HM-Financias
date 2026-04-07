@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}Excluir Transação | HM de Financias{% endblock %}
+
+{% block content %}
+<div class="topbar" style="margin-bottom: 2rem;">
+    <div class="page-title">
+        <h1>Excluir Transação</h1>
+        <p>Confirmar a remoção oficial desta movimentação do caixa</p>
+    </div>
+</div>
+
+<div class="dash-card" style="max-width: 600px; padding: 2.5rem; text-align: center;">
+    <div style="background-color: #fee2e2; width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+    </div>
+    
+    <h2 style="font-size: 1.25rem; margin-bottom: 1rem; color: var(--text-main);">Tem certeza que deseja excluir esta transação?</h2>
+    
+    <div style="background-color: #f8fafc; border-radius: 12px; padding: 1.25rem; margin-bottom: 2rem; text-align: left;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
+            <span style="color: var(--text-muted);">Data:</span>
+            <span style="font-weight: 600; color: var(--text-main);">{{ object.date|date:"d/m/Y" }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
+            <span style="color: var(--text-muted);">Tipo:</span>
+            <span style="font-weight: 600; {% if object.type == 'income' %}color: #10b981;{% else %}color: #ef4444;{% endif %}">
+                {% if object.type == 'income' %}Entrada{% else %}Saída{% endif %}
+            </span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
+            <span style="color: var(--text-muted);">Categoria:</span>
+            <span style="font-weight: 600; color: var(--text-main);">{{ object.category.name|default:"-" }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+            <span style="color: var(--text-muted);">Valor:</span>
+            <span style="font-weight: 700; color: var(--text-main);">R$ {{ object.amount }}</span>
+        </div>
+    </div>
+
+    <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 2rem;">
+        Esta ação irá estornar o valor do saldo da conta <strong>{{ object.account.name }}</strong> e é permanente.
+    </p>
+
+    <form method="post" style="display: flex; gap: 1rem; justify-content: center;">
+        {% csrf_token %}
+        <a href="{% url 'transaction_list' %}" class="btn-secondary" style="text-decoration: none; display: inline-block;">Cancelar</a>
+        <button type="submit" class="btn-danger" style="background-color: #ef4444; color: white; border: none; padding: 0.6rem 2rem; border-radius: 30px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">
+            Confirmar Exclusão
+        </button>
+    </form>
+</div>
+
+<style>
+.btn-secondary {
+    background-color: white;
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    padding: 0.6rem 2rem;
+    border-radius: 30px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-danger:hover {
+    opacity: 0.9;
+}
+</style>
+{% endblock %}

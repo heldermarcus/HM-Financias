@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Excluir Cliente | HM de Financias{% endblock %}
+
+{% block content %}
+<article class="card" style="max-width: 600px; margin: 0 auto; text-align: center;">
+    <header style="background: var(--danger); color: white;">
+        <h2>Deseja realmente remover este cliente?</h2>
+    </header>
+
+    <div style="padding: 2rem 0;">
+        <p style="font-size: 1.1rem; color: var(--text-main);">Você está prestes a excluir o cliente <strong>{{ object.name }}</strong>.</p>
+        <p style="font-size: 0.9rem; color: var(--text-muted);">Atenção: Se este cliente possuir vendas ou histórico vinculado, a exclusão será bloqueada para evitar inconsistências no sistema.</p>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="grid" style="margin-top: 1rem;">
+            <a href="{% url 'customer_list' %}" role="button" class="outline secondary">Cancelar</a>
+            <button type="submit" style="background: var(--danger); border-color: var(--danger);">Sim, Remover Cliente</button>
+        </div>
+    </form>
+</article>
+{% endblock %}

@@ -25,40 +25,115 @@ class DashboardView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         store = self.request.user.stores.first()
-        if store:
-            pf_acc = store.accounts.filter(account_type='PF').first()
-            pj_acc = store.accounts.filter(account_type='PJ').first()
-            context['pf_account'] = pf_acc
-            context['pj_account'] = pj_acc
-            
-            # F003 / F010: "Quanto posso gastar hoje?"
-            can_spend_today = 0
-            if pj_acc:
-                from financial.models import FixedCost, SpendingSettings
-                from django.db.models import Sum
-                from decimal import Decimal
+        
+        # Leitura da sessão para PF/PJ
+        active_account_type = self.request.session.get('active_account_type', 'PJ')
+        context['active_account_type'] = active_account_type
+        
+        if not store:
+            return context
 
+        pf_acc = store.accounts.filter(account_type='PF').first()
+        pj_acc = store.accounts.filter(account_type='PJ').first()
+        context['pf_account'] = pf_acc
+        context['pj_account'] = pj_acc
+        
+        from financial.models import Customer, Transaction, Sale, FixedCost, SpendingSettings
+        from decimal import Decimal
+        from django.db.models import Sum
+        from django.utils import timezone
+        import datetime
+        from financial.views import MONTH_ABBR, MONTH_FULL, get_month_range
+
+        today = timezone.now().date()
+        start_date, end_date = get_month_range(today)
+        context['mes_atual'] = MONTH_FULL[today.month]
+
+        if active_account_type == 'PJ':
+            # === DADOS PJ (Negócio) ===
+            can_spend_today = Decimal('0.00')
+            if pj_acc:
                 fixed_costs_sum = FixedCost.objects.filter(account=pj_acc, is_active=True).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
-                
                 settings, _ = SpendingSettings.objects.get_or_create(account=pj_acc, defaults={'reserve_percentage': 10})
                 reserve_factor = settings.reserve_percentage / Decimal('100.00')
-                
-                # Formula: Saldo PJ - (Soma Custos Fixos)
-                # O restante sofre desconto da Reserva %
                 available_after_fixed = pj_acc.balance - fixed_costs_sum
-                
                 if available_after_fixed > 0:
                     reserve_amount = available_after_fixed * reserve_factor
                     can_spend_today = available_after_fixed - reserve_amount
-                    
             context['can_spend_today'] = max(Decimal('0.00'), can_spend_today)
 
-            from financial.models import Customer
-            context['total_customers'] = Customer.objects.filter(store=store).count()
-            context['total_pending'] = Customer.objects.filter(store=store).aggregate(Sum('total_debt'))['total_debt__sum'] or Decimal('0.00')
+            context['total_customers'] = Customer.objects.filter(store=store, account_type='PJ').count()
+            context['total_pending'] = Customer.objects.filter(store=store, account_type='PJ').aggregate(Sum('total_debt'))['total_debt__sum'] or Decimal('0.00')
+            context['top_debtors'] = Customer.objects.filter(store=store, account_type='PJ', total_debt__gt=0).order_by('-total_debt')
+            
+            # Gráficos
+            labels, realizado = [], []
+            for i in range(5, -1, -1):
+                target_date = today.replace(day=1) - datetime.timedelta(days=30*i)
+                m_start, m_end = get_month_range(target_date)
+                labels.append(f"{MONTH_ABBR[m_start.month]}")
+                val_realizado = Transaction.objects.filter(
+                    account=pj_acc, type='income', date__range=[m_start, m_end]
+                ).aggregate(Sum('amount'))['amount__sum'] or 0
+                realizado.append(float(val_realizado))
+            context['line_labels'] = labels
+            context['line_data'] = realizado
+            
+            expenses = Transaction.objects.filter(
+                account=pj_acc, type='expense', date__range=[start_date, end_date]
+            ).values('category__name').annotate(total=Sum('amount')).order_by('-total')
+            
+            pie_labels, pie_data = [], []
+            for exp in expenses:
+                if exp['category__name']:
+                    pie_labels.append(exp['category__name'])
+                    pie_data.append(float(exp['total']))
+            if not pie_labels:
+                pie_labels, pie_data = ['Sem despesas pendentes'], [1]
+            context['pie_labels'] = pie_labels
+            context['pie_data'] = pie_data
+            
+            total_in = Transaction.objects.filter(account=pj_acc, type='income', date__range=[start_date, end_date]).aggregate(Sum('amount'))['amount__sum'] or 0
+            total_out = sum(pie_data) if pie_data != [1] else 0
+            context['lucro_liquido'] = total_in - total_out
+            
+            customers_with_sales = Sale.objects.filter(store=store, account_type='PJ').values('customer').distinct().count()
+            context['ticket_medio'] = total_in / customers_with_sales if customers_with_sales > 0 else 0
 
-            # F003: Inadimplentes Dashboard list
-            context['top_debtors'] = Customer.objects.filter(store=store, total_debt__gt=0).order_by('-total_debt')
+        else:
+            # === DADOS PF (Pessoal) ===
+            val_in = Transaction.objects.filter(account=pf_acc, type='income', date__range=[start_date, end_date]).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+            val_out = Transaction.objects.filter(account=pf_acc, type='expense', date__range=[start_date, end_date]).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+            
+            context['pf_receitas_mes'] = val_in
+            context['pf_despesas_mes'] = val_out
+            context['pf_saldo_mes'] = val_in - val_out
+            
+            labels, realizado = [], []
+            for i in range(5, -1, -1):
+                target_date = today.replace(day=1) - datetime.timedelta(days=30*i)
+                m_start, m_end = get_month_range(target_date)
+                labels.append(f"{MONTH_ABBR[m_start.month]}")
+                v = Transaction.objects.filter(
+                    account=pf_acc, type='income', date__range=[m_start, m_end]
+                ).aggregate(Sum('amount'))['amount__sum'] or 0
+                realizado.append(float(v))
+            context['line_labels'] = labels
+            context['line_data'] = realizado
+            
+            expenses = Transaction.objects.filter(
+                account=pf_acc, type='expense', date__range=[start_date, end_date]
+            ).values('category__name').annotate(total=Sum('amount')).order_by('-total')
+            
+            pie_labels, pie_data = [], []
+            for exp in expenses:
+                if exp['category__name']:
+                    pie_labels.append(exp['category__name'])
+                    pie_data.append(float(exp['total']))
+            if not pie_labels:
+                pie_labels, pie_data = ['Sem despesas pessoais'], [1]
+            context['pie_labels'] = pie_labels
+            context['pie_data'] = pie_data
 
         return context
 
@@ -302,3 +377,15 @@ def webhook_abacatepay(request):
     except Exception as e:
         logger.exception(f"Webhook AbacatePay erro: {e}")
         return HttpResponse(status=400)
+
+@login_required
+def switch_account_view(request, type_code):
+    if type_code in ['PF', 'PJ']:
+        request.session['active_account_type'] = type_code
+    
+    # Redirecionar de volta para a mesma página, fallback dashboard
+    next_url = request.GET.get('next')
+    from django.urls import resolve
+    if not next_url:
+        next_url = reverse('dashboard')
+    return redirect(next_url)
