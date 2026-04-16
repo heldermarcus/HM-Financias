@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . import views, views_reports
 
 urlpatterns = [
     path('transacoes/', views.TransactionListView.as_view(), name='transaction_list'),
@@ -21,5 +21,10 @@ urlpatterns = [
     path('transfers/add/', views.TransferCreateView.as_view(), name='transfer_add'),
     path('fixed-costs/', views.FixedCostListView.as_view(), name='fixedcost_list'),
     path('fixed-costs/add/', views.FixedCostCreateView.as_view(), name='fixedcost_add'),
-    path('relatorios/evolucao/', views.EvolucaoView.as_view(), name='relatorio_evolucao'),
+    
+    # Relatórios
+    path('relatorios/mensal/', views_reports.reports_monthly_view, name='reports_monthly'),
+    path('relatorios/fluxo-caixa/', views_reports.reports_cash_flow_view, name='reports_cash_flow'),
+    path('relatorios/dre/', views_reports.reports_dre_view, name='reports_dre'),
+    path('relatorios/exportar/csv/', views_reports.reports_export_csv, name='reports_export_csv'),
 ]

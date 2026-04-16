@@ -1,0 +1,127 @@
+{% extends 'financial/reports_monthly.html' %}
+{% block title %}{{ page_title }} | HM Finanças{% endblock %}
+
+{% block content %}
+<div class="report-container">
+    <div class="report-header">
+        <div>
+            <h1>DRE Simplificado</h1>
+            <p style="color: var(--text-muted);">Demonstração do Resultado do Exercício - <strong>Mês Atual</strong></p>
+        </div>
+        <div>
+            <!-- Pro Only Feature Export -->
+            <a href="{% url 'reports_export_csv' %}" class="btn" style="background: white; border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; text-decoration: none; color: var(--text-main); display: inline-flex; align-items: center; gap: 6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Exportar CSV
+            </a>
+            <button onclick="window.print()" class="btn" style="background: white; border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; text-decoration: none; color: var(--text-main); display: inline-flex; align-items: center; gap: 6px; cursor: pointer; margin-left: 8px;">
+                🖨️ Exportar PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabela Estruturada DRE -->
+    <div class="table-card" style="margin-bottom: 2rem;">
+        <h3 style="margin: 0 0 1rem; font-size: 1.1rem; color: var(--text-main);">Visão Gerencial</h3>
+        
+        <table style="width: 100%; border-collapse: collapse;">
+            <tbody>
+                <!-- Receita Bruta -->
+                <tr style="background: #f8fafc; border-top: 2px solid #e2e8f0; border-bottom: 2px solid #e2e8f0;">
+                    <td style="padding: 12px; font-weight: bold; font-size: 1rem;">1. Receita Bruta de Vendas (Total)</td>
+                    <td style="padding: 12px; font-weight: bold; font-size: 1rem; text-align: right; color: #10b981;">R$ {{ receita_bruta|floatformat:2 }}</td>
+                </tr>
+                
+                <!-- CPV -->
+                <tr>
+                    <td style="padding: 12px 12px 12px 24px; color: var(--text-muted); border-bottom: 1px solid #f1f5f9;">(-) Custo dos Produtos Vendidos (Estimado)</td>
+                    <td style="padding: 12px; text-align: right; color: #ef4444; border-bottom: 1px solid #f1f5f9;">- R$ {{ cpv|floatformat:2 }}</td>
+                </tr>
+
+                <!-- Lucro Bruto -->
+                <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                    <td style="padding: 12px; font-weight: bold; font-size: 1rem;">2. Lucro Bruto</td>
+                    <td style="padding: 12px; font-weight: bold; font-size: 1rem; text-align: right; color: #3b82f6;">R$ {{ lucro_bruto|floatformat:2 }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 12px 12px 24px; color: var(--text-muted); font-size: 0.8rem; border-bottom: 1px solid white;">Margem Bruta</td>
+                    <td style="padding: 8px 12px 12px 24px; text-align: right; color: var(--text-muted); font-size: 0.8rem; border-bottom: 1px solid white;">{{ margem_bruta|floatformat:1 }}%</td>
+                </tr>
+
+                <!-- Despesas Operacionais -->
+                <tr>
+                    <td style="padding: 12px 12px 12px 24px; color: var(--text-muted); border-bottom: 1px solid #f1f5f9;">(-) Despesas Operacionais (Fixas e Variáveis)</td>
+                    <td style="padding: 12px; text-align: right; color: #ef4444; border-bottom: 1px solid #f1f5f9;">- R$ {{ despesas_op|floatformat:2 }}</td>
+                </tr>
+
+                <!-- Lucro Líquido -->
+                <tr style="background: #eff6ff; border-top: 2px solid #bfdbfe; border-bottom: 2px solid #bfdbfe;">
+                    <td style="padding: 16px 12px; font-weight: bold; font-size: 1.1rem; color: #1e3a8a;">3. Lucro Líquido do Exercício</td>
+                    <td style="padding: 16px 12px; font-weight: bold; font-size: 1.1rem; text-align: right; color: #1e3a8a;">R$ {{ lucro_liquido|floatformat:2 }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 12px 12px 24px; color: var(--text-muted); font-size: 0.8rem;">Margem Líquida</td>
+                    <td style="padding: 8px 12px 12px 24px; text-align: right; font-weight: bold; color: {% if margem_liquida >= 0 %}#10b981{% else %}#ef4444{% endif %}; font-size: 0.8rem;">{{ margem_liquida|floatformat:1 }}%</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Chart Simplificado para DRE -->
+    <div class="chart-card">
+        <h3 style="margin: 0 0 1.5rem; font-size: 1.1rem; color: var(--text-main);">Visão em Cascata</h3>
+        <canvas id="dreChart" height="100"></canvas>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    const ctxDRE = document.getElementById('dreChart').getContext('2d');
+    
+    // Gráfico de Barras representando a cascata
+    // Cores: Verde (Entrada), Vermelho (Saída), Azul (Resultado)
+    new Chart(ctxDRE, {
+        type: 'bar',
+        data: {
+            labels: ['Receita Bruta', 'CPV', 'Lucro Bruto', 'Despesas Op.', 'Lucro Líquido'],
+            datasets: [{
+                label: 'Valores',
+                data: [
+                    {{ receita_bruta|stringformat:'.2f' }}, 
+                    -{{ cpv|stringformat:'.2f' }}, 
+                    {{ lucro_bruto|stringformat:'.2f' }}, 
+                    -{{ despesas_op|stringformat:'.2f' }}, 
+                    {{ lucro_liquido|stringformat:'.2f' }}
+                ],
+                backgroundColor: [
+                    '#10b981', // Receita
+                    '#ef4444', // CPV
+                    '#3b82f6', // Bruto
+                    '#ef4444', // Despesas
+                    '#1e3a8a'  // Liquido
+                ],
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'R$ ' + context.parsed.y.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { grid: { color: '#f1f5f9' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+</script>
+{% endblock %}

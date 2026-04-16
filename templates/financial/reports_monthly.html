@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }} | HM Finanças{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .report-container { max-width: 1000px; }
+    .report-header {
+        display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;
+    }
+    .cards-grid {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;
+    }
+    .metric-card {
+        background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; flex-direction: column;
+    }
+    .metric-title { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem; }
+    .metric-value { font-size: 1.8rem; font-weight: 700; color: var(--text-main); line-height: 1.2; }
+    .metric-value.green { color: #10b981; }
+    .metric-value.red { color: #ef4444; }
+    .metric-value.blue { color: #3b82f6; }
+    
+    .chart-card {
+        background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 2rem;
+    }
+    
+    .table-card {
+        background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04); overflow-x: auto;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+    th { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; }
+    
+    @media (max-width: 768px) {
+        .report-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="report-container">
+    <div class="report-header">
+        <div>
+            <h1>{{ page_title }}</h1>
+            <p style="color: var(--text-muted);">Comparação de receitas e gastos em <strong>{{ current_month }}</strong></p>
+        </div>
+        <div>
+            {% if user.plan == 'pro' %}
+            <a href="{% url 'reports_export_csv' %}" class="btn" style="background: white; border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; text-decoration: none; color: var(--text-main); display: inline-flex; align-items: center; gap: 6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Exportar CSV
+            </a>
+            <button onclick="window.print()" class="btn" style="background: white; border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; text-decoration: none; color: var(--text-main); display: inline-flex; align-items: center; gap: 6px; cursor: pointer; margin-left: 8px;">
+                🖨️ Imprimir
+            </button>
+            {% else %}
+            <a href="{% url 'subscription' %}" class="badge" style="background: #fef08a; color: #854d0e; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                ⭐ Pro: Libere exportações
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Cards -->
+    <div class="cards-grid">
+        <div class="metric-card">
+            <div class="metric-title">Vendas Totais</div>
+            <div class="metric-value green">R$ {{ sales_total|floatformat:2 }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Gastos Totais</div>
+            <div class="metric-value red">R$ {{ expenses_total|floatformat:2 }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Resultado Líquido</div>
+            <div class="metric-value {% if net_result >= 0 %}blue{% else %}red{% endif %}">R$ {{ net_result|floatformat:2 }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Margem do Mês</div>
+            <div class="metric-value" style="color: #8b5cf6;">{{ margin }}%</div>
+        </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-card">
+        <h3 style="margin: 0 0 1.5rem; font-size: 1.1rem; color: var(--text-main);">Comparativo Vendas vs Gastos</h3>
+        <canvas id="monthlyChart" height="100"></canvas>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+        <h3 style="margin: 0 0 1.5rem; font-size: 1.1rem; color: var(--text-main);">Detalhamento de Gastos por Categoria</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Categoria</th>
+                    <th style="text-align: right;">Valor</th>
+                    <th style="text-align: right;">Representatividade</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in expenses_by_cat %}
+                <tr>
+                    <td><strong>{{ item.category__name|default:"Despesas Não Categorizadas" }}</strong></td>
+                    <td style="text-align: right; color: #ef4444;">R$ {{ item.total|floatformat:2 }}</td>
+                    <td style="text-align: right; color: var(--text-muted);">
+                        {% widthratio item.total expenses_total 100 %}%
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                        Sem gastos registrados no período.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const ctx = document.getElementById('monthlyChart').getContext('2d');
+    
+    // In a real scenario we could pass daily data.
+    // For this prototype view, we use a simple bar for Total vs Expenses.
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Mês Atual - Resumo'],
+            datasets: [
+                {
+                    label: 'Vendas',
+                    data: [{{ sales_total|stringformat:'.2f' }}],
+                    backgroundColor: '#10b981',
+                    borderRadius: 6
+                },
+                {
+                    label: 'Gastos',
+                    data: [{{ expenses_total|stringformat:'.2f' }}],
+                    backgroundColor: '#ef4444',
+                    borderRadius: 6
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': R$ ' + context.parsed.y.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    // Custom Print Styling injected specifically for printing context
+    const printStyle = document.createElement('style');
+    printStyle.innerHTML = `
+        @media print {
+            body { background: white; -webkit-print-color-adjust: exact; padding: 0 !important; margin: 0 !important; }
+            .sidebar, .app-container::before { display: none !important; }
+            .main-content { margin: 0 !important; padding: 20px !important; }
+            .btn, .badge { display: none !important; }
+            .chart-card, .table-card, .metric-card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
+        }
+    `;
+    document.head.appendChild(printStyle);
+</script>
+{% endblock %}

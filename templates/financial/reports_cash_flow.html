@@ -1,0 +1,115 @@
+{% extends 'financial/reports_monthly.html' %}
+{% block title %}{{ page_title }} | HM Finanças{% endblock %}
+
+{% block content %}
+<div class="report-container">
+    <div class="report-header">
+        <div>
+            <h1>{{ page_title }}</h1>
+            <p style="color: var(--text-muted);">Evolução dos últimos 6 meses de fluxo</p>
+        </div>
+        <div>
+            {% if user.plan == 'pro' %}
+            <a href="{% url 'reports_export_csv' %}" class="btn" style="background: white; border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; text-decoration: none; color: var(--text-main); display: inline-flex; align-items: center; gap: 6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Exportar CSV
+            </a>
+            <button onclick="window.print()" class="btn" style="background: white; border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; text-decoration: none; color: var(--text-main); display: inline-flex; align-items: center; gap: 6px; cursor: pointer; margin-left: 8px;">
+                🖨️ Imprimir
+            </button>
+            {% else %}
+            <a href="{% url 'subscription' %}" class="badge" style="background: #fef08a; color: #854d0e; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                ⭐ Pro: Libere exportações
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-card">
+        <h3 style="margin: 0 0 1.5rem; font-size: 1.1rem; color: var(--text-main);">Evolução de Saldo Mensal</h3>
+        <canvas id="cashFlowChart" height="100"></canvas>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+        <h3 style="margin: 0 0 1.5rem; font-size: 1.1rem; color: var(--text-main);">Detalhamento Mensal</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Mês</th>
+                    <th style="text-align: right;">Entradas</th>
+                    <th style="text-align: right;">Saídas</th>
+                    <th style="text-align: right;">Saldo do Mês</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for month, data in months_data.items %}
+                <tr>
+                    <td><strong>{{ month }}</strong></td>
+                    <td style="text-align: right; color: #10b981;">R$ {{ data.in|floatformat:2 }}</td>
+                    <td style="text-align: right; color: #ef4444;">-R$ {{ data.out|floatformat:2 }}</td>
+                    <td style="text-align: right; font-weight: bold; color: {% if data.balance >= 0 %}#3b82f6{% else %}#ef4444{% endif %};">
+                        R$ {{ data.balance|floatformat:2 }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                        Não há histórico suficiente para os últimos 6 meses.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    // Prepare Data for Chart
+    const labels = [];
+    const balances = [];
+    
+    {% for month, data in months_data.items %}
+        labels.push("{{ month }}");
+        balances.push({{ data.balance|stringformat:'.2f' }});
+    {% endfor %}
+
+    const ctxCF = document.getElementById('cashFlowChart').getContext('2d');
+    new Chart(ctxCF, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Fluxo Líquido do Mês',
+                data: balances,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59,130,246,0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Saldo Liquido: R$ ' + context.parsed.y.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { grid: { color: '#f1f5f9' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+</script>
+{% endblock %}
