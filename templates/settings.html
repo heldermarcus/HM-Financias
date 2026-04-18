@@ -1,4 +1,4 @@
-﻿{% extends 'base.html' %}
+{% extends 'base.html' %}
 {% block title %}Configurações | Evidência Financeira{% endblock %}
 
 {% block extra_head %}
@@ -394,43 +394,21 @@
 
             <div class="plan-current">
                 <div class="plan-icon">
-                    {% if user.plan == 'pro' %}🚀{% elif user.plan == 'plus' %}⭐{% else %}🆓{% endif %}
+                    🚀
                 </div>
                 <div class="plan-info">
-                    <h4>Plano {{ user.get_plan_display }}</h4>
-                    <p>Status: {{ user.get_plan_status_display }} · Desde {{ user.date_joined|date:"d/m/Y" }}</p>
+                    <h4>Assinatura HM Finance</h4>
+                    <p>Status: Ativa · Próxima renovação: Em 30 dias</p>
                 </div>
             </div>
 
-            {% if user.plan != 'pro' %}
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-                <div style="border: 2px solid var(--border-color); border-radius: 12px; padding: 1.5rem;">
-                    <h4 style="margin: 0 0 0.5rem; font-size: 1rem;">Plus</h4>
-                    <p style="font-size: 1.8rem; font-weight: 700; color: var(--primary); margin: 0;">R$ 29<span style="font-size: 0.85rem; font-weight: 400;">/mês</span></p>
-                    <ul style="font-size: 0.8rem; color: var(--text-muted); padding-left: 1.2rem; margin-top: 1rem;">
-                        <li>Contas a pagar/receber</li>
-                        <li>Alertas de inadimplência</li>
-                        <li>Relatórios mensais</li>
-                        <li>Custos fixos</li>
-                    </ul>
-                    {% if user.plan == 'free' %}
-                    <a href="{% url 'create_checkout' 'basic' %}" class="btn-primary" style="display: block; text-align: center; margin-top: 1rem; text-decoration: none;">Assinar Plus</a>
-                    {% endif %}
-                </div>
-                <div style="border: 2px solid var(--primary); border-radius: 12px; padding: 1.5rem; position: relative;">
-                    <span style="position: absolute; top: -10px; right: 12px; background: var(--primary); color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700;">POPULAR</span>
-                    <h4 style="margin: 0 0 0.5rem; font-size: 1rem;">Pro</h4>
-                    <p style="font-size: 1.8rem; font-weight: 700; color: var(--primary); margin: 0;">R$ 49<span style="font-size: 0.85rem; font-weight: 400;">/mês</span></p>
-                    <ul style="font-size: 0.8rem; color: var(--text-muted); padding-left: 1.2rem; margin-top: 1rem;">
-                        <li>Tudo do Plus +</li>
-                        <li>DRE simplificado</li>
-                        <li>Exportação CSV/PDF</li>
-                        <li>Análises avançadas</li>
-                    </ul>
-                    <a href="{% url 'create_checkout' 'pro' %}" class="btn-primary" style="display: block; text-align: center; margin-top: 1rem; text-decoration: none;">Assinar Pro</a>
+            <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; margin-top: 1rem;">
+                <h4 style="margin: 0 0 10px; font-size: 1rem;">Período e Valor</h4>
+                <p style="margin: 0; font-size: 0.9rem; color: var(--text-muted);">Sua assinatura é renovada automaticamente pelo valor de <strong>R$ 49,90/mês</strong>.</p>
+                <div class="btn-row" style="margin-top: 1.5rem;">
+                    <a href="mailto:suporte@hmfinancas.com.br?subject=Cancelamento de Assinatura" class="btn-secondary" style="font-size: 0.8rem;">Solicitar Cancelamento</a>
                 </div>
             </div>
-            {% endif %}
         </div>
     </div>
 
@@ -562,11 +540,11 @@
 
             <div class="faq-item" onclick="this.classList.toggle('open')">
                 <div class="faq-question">
-                    Posso mudar meu plano depois?
+                    Como funciona a assinatura única?
                     <span class="faq-arrow">▼</span>
                 </div>
                 <div class="faq-answer">
-                    Sim! Acesse Configurações → Plano & Pagamento para visualizar os planos disponíveis e fazer upgrade a qualquer momento. O novo plano é ativado imediatamente após o pagamento via Pix.
+                    O HM Finance oferece um plano único com acesso a todas as ferramentas por R$ 49,90/mês. A renovação é automática a cada 30 dias via AbacatePay.
                 </div>
             </div>
         </div>

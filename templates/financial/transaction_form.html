@@ -1,4 +1,4 @@
-﻿{% extends 'base.html' %}
+{% extends 'base.html' %}
 {% block title %}{% if object %}Editar{% else %}Nova{% endif %} Transação | Evidência Financeira{% endblock %}
 
 {% block content %}
@@ -34,6 +34,29 @@
                 {{ form.category }}
                 <div style="color: var(--danger); font-size: 0.8rem;">{{ form.category.errors }}</div>
             </div>
+
+            <!-- Novos Campos de Cliente e Venda -->
+            <div>
+                <label style="font-weight: 500; color: var(--text-main); font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">Cliente (Opcional)</label>
+                {{ form.customer }}
+                <div style="color: var(--danger); font-size: 0.8rem;">{{ form.customer.errors }}</div>
+            </div>
+
+            <div id="div_id_sale" style="display: none;">
+                <label style="font-weight: 500; color: var(--text-main); font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">Venda Relacionada</label>
+                {{ form.sale }}
+                <div style="color: var(--danger); font-size: 0.8rem;">{{ form.sale.errors }}</div>
+            </div>
+
+            <div id="sale_info_card" style="grid-column: 1 / -1; display: none; background: #fffbeb; border: 1px solid #fde68a; padding: 1rem; border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span style="font-size: 0.8rem; color: #92400e; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Saldo Devedor</span>
+                        <p id="sale_debt_value" style="font-size: 1.25rem; font-weight: 700; color: #b45309; margin: 0;">R$ 0,00</p>
+                    </div>
+                    <button type="button" id="btn_pay_total" style="background: #b45309; color: white; padding: 0.4rem 1rem; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer;">Pagar Tudo</button>
+                </div>
+            </div>
             
             <div>
                 <label style="font-weight: 500; color: var(--text-main); font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">Valor (R$)</label>
@@ -43,7 +66,6 @@
             
             <div>
                 <label style="font-weight: 500; color: var(--text-main); font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">Data da Transação</label>
-                <!-- Pico CSS input default is great, just rendering -->
                 <input type="date" name="{{ form.date.name }}" id="{{ form.date.id_for_label }}" value="{{ form.date.value|date:'Y-m-d'|default:'' }}" required>
                 <div style="color: var(--danger); font-size: 0.8rem;">{{ form.date.errors }}</div>
             </div>
@@ -59,6 +81,78 @@
                 <textarea name="{{ form.description.name }}" id="{{ form.description.id_for_label }}" rows="3">{{ form.description.value|default:'' }}</textarea>
                 <div style="color: var(--danger); font-size: 0.8rem;">{{ form.description.errors }}</div>
             </div>
+
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const customerSelect = document.querySelector('#id_customer');
+                const saleSelect = document.querySelector('#id_sale');
+                const saleDiv = document.querySelector('#div_id_sale');
+                const saleInfoCard = document.querySelector('#sale_info_card');
+                const saleDebtValue = document.querySelector('#sale_debt_value');
+                const btnPayTotal = document.querySelector('#btn_pay_total');
+                const amountInput = document.querySelector('#id_amount');
+                let currentSales = [];
+
+                function updateVendas() {
+                    const customerId = customerSelect.value;
+                    if (!customerId) {
+                        saleDiv.style.display = 'none';
+                        saleInfoCard.style.display = 'none';
+                        return;
+                    }
+
+                    fetch(`/financial/ajax/get-customer-sales/${customerId}/`)
+                        .then(response => response.json())
+                        .then(data => {
+                            currentSales = data.sales;
+                            // Limpar options
+                            saleSelect.innerHTML = '<option value="">---------</option>';
+                            
+                            data.sales.forEach(sale => {
+                                const option = document.createElement('option');
+                                option.value = sale.id;
+                                option.textContent = sale.desc;
+                                option.dataset.remaining = sale.remaining;
+                                saleSelect.appendChild(option);
+                            });
+
+                            if (data.sales.length > 0) {
+                                saleDiv.style.display = 'block';
+                            } else {
+                                saleDiv.style.display = 'none';
+                            }
+                        });
+                }
+
+                customerSelect.addEventListener('change', updateVendas);
+
+                saleSelect.addEventListener('change', function() {
+                    const selectedSaleId = this.value;
+                    const sale = currentSales.find(s => s.id == selectedSaleId);
+                    
+                    if (sale) {
+                        saleInfoCard.style.display = 'block';
+                        saleDebtValue.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(sale.remaining);
+                        
+                        btnPayTotal.onclick = function() {
+                            amountInput.value = sale.remaining;
+                        };
+                    } else {
+                        saleInfoCard.style.display = 'none';
+                    }
+                });
+
+                // Se já houver um cliente selcionado (edição)
+                if (customerSelect.value && !saleSelect.value) {
+                    updateVendas();
+                } else if (saleSelect.value) {
+                    // Lógica para quando vier preenchido (edição)
+                    saleDiv.style.display = 'block';
+                }
+            });
+        </script>
 
         </div>
         

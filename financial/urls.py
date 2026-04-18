@@ -7,6 +7,7 @@ urlpatterns = [
     path('transacoes/<int:pk>/edit/', views.TransactionUpdateView.as_view(), name='transaction_edit'),
     path('transacoes/<int:pk>/delete/', views.TransactionDeleteView.as_view(), name='transaction_delete'),
     path('transacoes/<int:pk>/historico/', views.transaction_history_api, name='transaction_history'),
+    path('ajax/get-customer-sales/<int:customer_id>/', views.get_customer_sales, name='ajax_get_customer_sales'),
     path('customers/', views.CustomerListView.as_view(), name='customer_list'),
     path('customers/add/', views.CustomerCreateView.as_view(), name='customer_add'),
     path('customers/<int:pk>/edit/', views.CustomerUpdateView.as_view(), name='customer_edit'),

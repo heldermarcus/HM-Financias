@@ -60,6 +60,7 @@ class Transaction(models.Model):
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    sale = models.ForeignKey('Sale', on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions')
 
     def __str__(self):
         return f"{self.type} - {self.amount} - {self.date}"
@@ -222,3 +223,19 @@ class TransactionHistory(models.Model):
 
     def __str__(self):
         return f"Rev {self.id} (Trans: {self.transaction_reference_id}) - {self.field_changed}"
+@receiver(post_save, sender=Transaction)
+def update_sale_on_transaction(sender, instance, created, **kwargs):
+    if instance.sale and instance.type == 'income':
+        # Re-calcula o total pago baseado em todas as transações vinculadas a essa venda
+        from django.db.models import Sum
+        total_paid = Transaction.objects.filter(sale=instance.sale, type='income').aggregate(Sum('amount'))['amount__sum'] or 0
+        instance.sale.paid_amount = total_paid
+        instance.sale.save() # Isso já atualiza status e remaining_amount via Sale.save()
+
+@receiver(post_delete, sender=Transaction)
+def update_sale_on_transaction_delete(sender, instance, **kwargs):
+    if instance.sale and instance.type == 'income':
+        from django.db.models import Sum
+        total_paid = Transaction.objects.filter(sale=instance.sale, type='income').aggregate(Sum('amount'))['amount__sum'] or 0
+        instance.sale.paid_amount = total_paid
+        instance.sale.save()

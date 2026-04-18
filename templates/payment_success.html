@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sucesso - Pagamento Confirmado{% endblock %}
+
+{% block content %}
+<div style="display: flex; align-items: center; justify-content: center; min-height: 70vh;">
+    <article style="max-width: 500px; width: 100%; border-radius: 24px; text-align: center; padding: 40px; box-shadow: var(--card-shadow); border: none;">
+        <div style="width: 80px; height: 80px; background: #d1fae5; color: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        </div>
+        
+        <h2 style="font-family: 'Montserrat', sans-serif; font-weight: 800; color: #1A365D;">Pagamento Confirmado!</h2>
+        <p style="color: #718096; font-size: 1.1rem; margin-bottom: 32px;">Obrigado! Sua assinatura foi ativada com sucesso. Você agora tem acesso total ao HM Finance.</p>
+        
+        <div style="background: #f8fafc; border-radius: 12px; padding: 16px; margin-bottom: 32px; text-align: left;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="color: #64748b; font-size: 0.9rem;">Período</span>
+                <span style="font-weight: 600;">30 dias</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span style="color: #64748b; font-size: 0.9rem;">Valor</span>
+                <span style="font-weight: 600;">R$ 49,90</span>
+            </div>
+        </div>
+
+        <a href="{% url 'dashboard' %}" class="cta-button" style="text-decoration: none; display: block; background: #38B2AC; color: white; padding: 16px; border-radius: 50px; font-weight: 700; transition: all 0.2s;">Ir para o Dashboard</a>
+    </article>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script>
+    window.onload = function() {
+        confetti({
+            particleCount: 150,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#38B2AC', '#1A365D', '#10b981']
+        });
+    };
+</script>
+{% endblock %}

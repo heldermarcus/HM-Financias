@@ -8,19 +8,18 @@ from .models import Transaction, Category, Customer, Sale, SaleInstallment, Paym
 import datetime
 from django.contrib import messages
 
+from .forms import TransactionForm
+
 class TransactionCreateView(LoginRequiredMixin, CreateView):
     model = Transaction
+    form_class = TransactionForm
     template_name = 'financial/transaction_form.html'
-    fields = ['type', 'account', 'category', 'amount', 'date', 'payment_method', 'description']
     success_url = reverse_lazy('transaction_list')
 
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        store = self.request.user.stores.first()
-        if store:
-            from core.models import Account
-            form.fields['account'].queryset = Account.objects.filter(store=store)
-        return form
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
 
     def form_valid(self, form):
         form.instance.created_by = self.request.user
@@ -49,9 +48,27 @@ class TransactionCreateView(LoginRequiredMixin, CreateView):
 
     def get_initial(self):
         initial = super().get_initial()
-        # default to today
         from django.utils import timezone
         initial['date'] = timezone.now().date()
+        
+        # Pre-fill from GET parameters (useful for "Baixar" link in installments)
+        customer_id = self.request.GET.get('customer')
+        if customer_id:
+            initial['customer'] = customer_id
+            initial['type'] = 'income'
+            
+        sale_id = self.request.GET.get('sale')
+        if sale_id:
+            initial['sale'] = sale_id
+            # Try to find a category named 'Venda' or similar
+            venda_cat = Category.objects.filter(name__icontains='venda', type='income').first()
+            if venda_cat:
+                initial['category'] = venda_cat.id
+        
+        amount = self.request.GET.get('amount')
+        if amount:
+            initial['amount'] = amount
+            
         return initial
 
 class TransactionListView(LoginRequiredMixin, ListView):
@@ -104,21 +121,18 @@ class TransactionListView(LoginRequiredMixin, ListView):
 
 class TransactionUpdateView(LoginRequiredMixin, UpdateView):
     model = Transaction
+    form_class = TransactionForm
     template_name = 'financial/transaction_form.html'
-    fields = ['type', 'account', 'category', 'amount', 'date', 'payment_method', 'description']
     success_url = reverse_lazy('transaction_list')
 
     def get_queryset(self):
         store = self.request.user.stores.first()
         return Transaction.objects.filter(account__store=store)
 
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        store = self.request.user.stores.first()
-        if store:
-            from core.models import Account
-            form.fields['account'].queryset = Account.objects.filter(store=store)
-        return form
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
 
     def form_valid(self, form):
         old_obj = Transaction.objects.get(pk=self.object.pk)
@@ -205,6 +219,19 @@ def transaction_history_api(request, pk):
             'user': ed_name
         })
     return JsonResponse({'status': 'ok', 'logs': data})
+
+@login_required
+def get_customer_sales(request, customer_id):
+    store = request.user.stores.first()
+    sales = Sale.objects.filter(customer_id=customer_id, store=store).exclude(status='paid')
+    data = []
+    for s in sales:
+        data.append({
+            'id': s.id,
+            'desc': f"Venda #{s.id} - R$ {s.total_amount} (Pendente: R$ {s.remaining_amount})",
+            'remaining': float(s.remaining_amount)
+        })
+    return JsonResponse({'sales': data})
 
 class CustomerListView(LoginRequiredMixin, ListView):
     model = Customer

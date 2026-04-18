@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 from django.utils.decorators import method_decorator
 from django.http import JsonResponse
@@ -134,69 +135,69 @@ from django.views.decorators.csrf import csrf_exempt
 logger = logging.getLogger(__name__)
 
 @login_required
-def subscription_view(request):
-    return render(request, 'subscription.html')
+def paywall_view(request):
+    if request.user.has_active_subscription:
+        return redirect('dashboard')
+    return render(request, 'paywall.html')
+
+class PaymentSuccessView(LoginRequiredMixin, TemplateView):
+    template_name = 'payment_success.html'
+
+class PaymentFailedView(LoginRequiredMixin, TemplateView):
+    template_name = 'payment_failed.html'
 
 @login_required
-def create_checkout(request, plan):
+def create_checkout(request):
     """
-    Gera uma cobrança no AbacatePay e redireciona o usuário para o checkout.
-    
-    Fluxo:
-    1. Valida o plano (basic/pro)
-    2. Monta o payload correto com Product + CustomerMetadata
-    3. Chama billing.create() do SDK
-    4. Salva o billing_id no usuário
-    5. Redireciona para a URL de pagamento
+    Gera uma cobrança no AbacatePay (Assinatura Única R$ 49,90) e redireciona o usuário para o checkout.
     """
-    if plan not in ['basic', 'pro']:
-        from django.contrib import messages
-        messages.error(request, "Plano inválido.")
-        return redirect('subscription')
-    
-    price = 2900 if plan == 'basic' else 4900
-    plan_name = "Plano Básico HMF" if plan == 'basic' else "Plano PRO HMF"
+    price = 4990
+    plan_name = "Assinatura Mensal HMF"
     
     # Proteção anti-duplicata: checar se já existe cobrança recente (últimos 60s)
-    last_billing_id = request.user.abacatepay_subscription_id
-    cache_key = f"checkout_{request.user.id}_{plan}"
+    cache_key = f"checkout_{request.user.id}"
     from django.core.cache import cache
     if cache.get(cache_key):
-        logger.warning(f"Checkout duplicado bloqueado para user={request.user.id} plan={plan}")
-        from django.contrib import messages
-        messages.warning(request, "Aguarde, sua cobrança anterior ainda está sendo processada.")
-        return redirect('subscription')
+        logger.warning(f"Checkout duplicado bloqueado para user={request.user.id}")
+        return redirect('paywall')
     
     try:
         from abacatepay import AbacatePay
         from abacatepay.products import Product
         from abacatepay.customers import CustomerMetadata
+        from django.urls import reverse
+        import os, time
         
         api_key = os.environ.get('ABACATEPAY_API_KEY')
         if not api_key:
-            raise ValueError("ABACATEPAY_API_KEY não definida nas variáveis de ambiente.")
+            raise ValueError("ABACATEPAY_API_KEY não definida")
         
         abacate = AbacatePay(api_key)
         
-        # Build URLs — AbacatePay SDK Pydantic valida formato HttpUrl
         host = request.get_host()
+        if settings.DEBUG and ('localhost' in host or '127.0.0.1' in host):
+            # Bypass AbacatePay SDK validation (needs dots, TLD, and NO PORT)
+            # We strip the port because the SDK regex doesn't support :8000
+            host = host.split(':')[0] # Remove port
+            if 'localhost' in host:
+                host = host.replace('localhost', '127.0.0.1')
+            if '.nip.io' not in host:
+                host += '.nip.io'
+                
         scheme = request.scheme
         base_url = f"{scheme}://{host}"
         
-        # Use o domínio real para os redirects (mesmo localhost funciona para redirect de browser)        
-        return_url = base_url + reverse('subscription')
-        completion_url = base_url + reverse('dashboard') + "?upgraded=true"
+        return_url = base_url + reverse('payment_failed')
+        completion_url = base_url + reverse('payment_success')
         
-        # Gerar external_id único para este checkout (anti-duplicata)
-        external_id = f"hmf-{request.user.id}-{plan}-{int(time.time())}"
+        external_id = f"hmf-{request.user.id}-{int(time.time())}"
         
-        # Montar produto com todos os campos obrigatórios do SDK
         product = Product(
             external_id=external_id,
             name=plan_name,
-            description=f"Assinatura {plan_name} - HM de Financias",
+            description="Acesso completo ao HM de Finanças",
             quantity=1,
-            price=price  # em centavos
+            price=price
         )
         
         # Montar dados do cliente com todos os campos obrigatórios
@@ -244,14 +245,17 @@ def create_checkout(request, plan):
         )
         
         # billing é instância de Billing com .id e .url
-        logger.info(
-            f"Billing criado com sucesso | billing_id={billing.id} | "
-            f"url={billing.url} | user={user.id}"
-        )
+        logger.info(f"Billing criado com sucesso | billing_id={billing.id} | url={billing.url} | user={user.id}")
         
-        # Salvar billing_id no usuário
-        user.abacatepay_subscription_id = billing.id
-        user.save(update_fields=['abacatepay_subscription_id'])
+        # Registrar a tentativa de assinatura local (Pendente)
+        from core.models import Subscription
+        Subscription.objects.create(
+            user=user,
+            subscription_id=billing.id,
+            status='pending',
+            amount=49.90,
+            expiry_date=timezone.now() # Apenas placeholder, vai atualizar no webhook
+        )
         
         # Redirecionar para checkout do AbacatePay
         return redirect(billing.url)
@@ -260,10 +264,9 @@ def create_checkout(request, plan):
         logger.error(f"Erro de configuração AbacatePay: {e}")
         from django.contrib import messages
         messages.error(request, f"Erro de configuração: {e}")
-        return redirect('subscription')
+        return redirect('paywall')
     
     except Exception as e:
-        # Tentar extrair response body se for erro da API
         error_detail = str(e)
         if hasattr(e, 'response'):
             try:
@@ -272,13 +275,8 @@ def create_checkout(request, plan):
             except Exception:
                 pass
         
-        logger.exception(
-            f"Erro ao criar billing AbacatePay | user={request.user.id} | "
-            f"plan={plan} | error_type={type(e).__name__} | detail={error_detail}"
-        )
-        from django.contrib import messages
-        messages.error(request, f"Erro ao gerar cobrança: {error_detail}")
-        return redirect('subscription')
+        logger.exception(f"Erro ao criar billing AbacatePay | user={request.user.id} | detail={error_detail}")
+        return redirect('payment_failed')
 
 @csrf_exempt
 def webhook_abacatepay(request):
@@ -298,31 +296,28 @@ def webhook_abacatepay(request):
         
         if event == 'billing.paid':
             billing_id = data.get('id')
-            amount = data.get('amount', 0)
             
-            # Encontrar usuário pelo billing_id salvo
-            from core.models import User
-            user = User.objects.filter(abacatepay_subscription_id=billing_id).first()
+            from core.models import Subscription, User
+            from django.utils import timezone
+            import datetime
             
-            if not user:
-                # Fallback: buscar pelo email do customer
-                customer_email = data.get('customer', {}).get('email')
-                if customer_email:
-                    user = User.objects.filter(email=customer_email).first()
-            
-            if user:
-                user.plan = 'pro' if amount > 3000 else 'basic'
-                user.plan_status = 'active'
-                user.save(update_fields=['plan', 'plan_status'])
-                logger.info(
-                    f"Assinatura ativada via webhook | user={user.id} | "
-                    f"plan={user.plan} | billing_id={billing_id}"
-                )
+            sub = Subscription.objects.filter(subscription_id=billing_id).first()
+            if sub:
+                sub.status = 'active'
+                sub.expiry_date = timezone.now() + datetime.timedelta(days=30)
+                sub.next_billing_date = sub.expiry_date
+                sub.save()
+                logger.info(f"Assinatura {billing_id} ativada para expirar em {sub.expiry_date}")
             else:
-                logger.warning(
-                    f"Webhook billing.paid: usuário não encontrado | "
-                    f"billing_id={billing_id}"
-                )
+                logger.warning(f"Webhook billing.paid: Nenhuma assinatura encontada para billing_id={billing_id}")
+            
+        # Salva o log do webhook para auditoria
+        from core.models import PaymentWebhook
+        PaymentWebhook.objects.create(
+            event_type=event,
+            subscription_id=data.get('id', 'unknown'),
+            payload=payload
+        )
                 
         return HttpResponse(status=200)
         

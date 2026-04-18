@@ -7,7 +7,6 @@ import calendar
 import csv
 from django.http import HttpResponse
 
-from core.decorators import require_plus_plan, require_pro_plan
 from financial.models import Transaction, Sale, Category
 
 def get_base_context(request, title):
@@ -16,7 +15,6 @@ def get_base_context(request, title):
         'current_month': timezone.now().strftime('%B/%Y').capitalize(),
     }
 
-@require_plus_plan
 def reports_monthly_view(request):
     """Relatório Mensal - Vendas vs Gastos com gráficos e detalhamento"""
     now = timezone.now()
@@ -61,7 +59,6 @@ def reports_monthly_view(request):
     return render(request, 'financial/reports_monthly.html', context)
 
 
-@require_plus_plan
 def reports_cash_flow_view(request):
     """Fluxo de Caixa - Visão dos últimos 6 meses"""
     now = timezone.now()
@@ -105,7 +102,6 @@ def reports_cash_flow_view(request):
     return render(request, 'financial/reports_cash_flow.html', context)
 
 
-@require_pro_plan
 def reports_dre_view(request):
     """DRE Simplificado - Receitas, Custos, Lucro Bruto, OP e Líquido"""
     now = timezone.now()
@@ -151,7 +147,6 @@ def reports_dre_view(request):
     return render(request, 'financial/reports_dre.html', context)
 
 
-@require_pro_plan
 def reports_export_csv(request):
     """Exportar relatórios em CSV"""
     response = HttpResponse(

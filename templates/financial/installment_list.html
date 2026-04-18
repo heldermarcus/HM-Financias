@@ -1,4 +1,4 @@
-﻿{% extends 'base.html' %}
+{% extends 'base.html' %}
 {% block title %}Cobranças Pendentes | Evidência Financeira{% endblock %}
 
 {% block content %}
@@ -14,7 +14,9 @@
                 <th>Vencimento</th>
                 <th>Cliente</th>
                 <th>Parcela</th>
-                <th>Valor</th>
+                <th>Venda Original</th>
+                <th>Já Recebido</th>
+                <th>Saldo Restante</th>
                 <th>Status</th>
                 <th>Ações</th>
             </tr>
@@ -25,21 +27,27 @@
                 <td>{{ install.due_date|date:"d/m/Y" }}</td>
                 <td>{{ install.sale.customer.name }}</td>
                 <td>{{ install.installment_number }} de {{ install.sale.installments_count }}</td>
-                <td>R$ {{ install.amount }}</td>
+                <td style="font-weight: 500;">R$ {{ install.sale.total_amount }}</td>
+                <td style="color: var(--success);">R$ {{ install.sale.paid_amount }}</td>
+                <td style="color: var(--danger); font-weight: 700;">R$ {{ install.sale.remaining_amount }}</td>
                 <td>
                     {% if install.status == 'overdue' %}
-                        <span style="color:red;">Atrasado</span>
+                        <span style="background: #fee2e2; color: #b91c1c; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">Atrasado</span>
+                    {% elif install.sale.paid_amount > 0 %}
+                        <span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">Parcial</span>
                     {% else %}
-                        Pendente
+                        <span style="background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">Pendente</span>
                     {% endif %}
                 </td>
                 <td>
-                    <a href="{% url 'payment_add' install.id %}" role="button" class="outline">Registrar Pgto</a>
+                    <div style="display: flex; gap: 8px;">
+                        <a href="{% url 'transaction_add' %}?customer={{ install.sale.customer.id }}&sale={{ install.sale.id }}&amount={{ install.sale.remaining_amount }}" role="button" class="outline" style="font-size: 0.75rem; padding: 4px 10px;">Baixar</a>
+                    </div>
                 </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="6" class="text-center">Nenhuma cobrança pendente para os próximos dias! 🎉</td>
+                <td colspan="8" class="text-center">Nenhuma cobrança pendente para os próximos dias! 🎉</td>
             </tr>
             {% endfor %}
         </tbody>

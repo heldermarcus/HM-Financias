@@ -1,4 +1,4 @@
-﻿{% extends 'base.html' %}
+{% extends 'base.html' %}
 {% block title %}Quem me deve | Evidência Financeira{% endblock %}
 
 {% block content %}
@@ -24,7 +24,7 @@
                 <td>{{ customer.phone|default:"-" }}</td>
                 <td class="text-danger">R$ {{ customer.total_debt }}</td>
                 <td>
-                    <a href="https://wa.me/55{{ customer.phone|default:'' }}" target="_blank" role="button" class="outline">Cobrar WhatsApp</a>
+                    <small class="text-muted">Cobrança Manual</small>
                 </td>
             </tr>
             {% empty %}

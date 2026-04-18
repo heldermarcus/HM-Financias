@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Erro no Pagamento - HM Finance{% endblock %}
+
+{% block content %}
+<div style="display: flex; align-items: center; justify-content: center; min-height: 70vh;">
+    <article style="max-width: 500px; width: 100%; border-radius: 24px; text-align: center; padding: 40px; box-shadow: var(--card-shadow); border: none;">
+        <div style="width: 80px; height: 80px; background: var(--danger-light); color: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </div>
+        
+        <h2 style="font-family: 'Montserrat', sans-serif; font-weight: 800; color: #1A365D;">Pagamento não concluído</h2>
+        <p style="color: #718096; font-size: 1.1rem; margin-bottom: 32px;">Infelizmente não conseguimos processar sua cobrança. Verifique seus dados ou tente outro método de pagamento.</p>
+        
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <a href="{% url 'paywall' %}" style="text-decoration: none; display: block; background: #38B2AC; color: white; padding: 16px; border-radius: 50px; font-weight: 700; transition: all 0.2s;">Tentar Novamente</a>
+            <a href="mailto:suporte@hmfinancas.com.br" style="text-decoration: none; display: block; background: #f8fafc; color: #64748b; padding: 16px; border-radius: 50px; font-weight: 600; border: 1px solid #e2e8f0;">Falar com Suporte</a>
+        </div>
+    </article>
+</div>
+{% endblock %}

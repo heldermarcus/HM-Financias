@@ -1,4 +1,4 @@
-﻿{% extends 'financial/reports_monthly.html' %}
+{% extends 'financial/reports_monthly.html' %}
 {% block title %}{{ page_title }} | Evidência Financeira{% endblock %}
 
 {% block content %}
@@ -9,7 +9,6 @@
             <p style="color: var(--text-muted);">Evolução dos últimos 6 meses de fluxo</p>
         </div>
         <div>
-            {% if user.plan == 'pro' %}
             <a href="{% url 'reports_export_csv' %}" class="btn" style="background: white; border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; text-decoration: none; color: var(--text-main); display: inline-flex; align-items: center; gap: 6px;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                 Exportar CSV
@@ -17,11 +16,6 @@
             <button onclick="window.print()" class="btn" style="background: white; border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; text-decoration: none; color: var(--text-main); display: inline-flex; align-items: center; gap: 6px; cursor: pointer; margin-left: 8px;">
                 🖨️ Imprimir
             </button>
-            {% else %}
-            <a href="{% url 'subscription' %}" class="badge" style="background: #fef08a; color: #854d0e; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-                ⭐ Pro: Libere exportações
-            </a>
-            {% endif %}
         </div>
     </div>
 
