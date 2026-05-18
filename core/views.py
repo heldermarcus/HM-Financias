@@ -187,6 +187,20 @@ def settings_view(request):
                 messages.success(request, "Senha alterada com sucesso!")
             return redirect('settings')
 
+        elif action == 'update_balance':
+            new_balance = request.POST.get('new_balance')
+            if new_balance is not None and store:
+                account = store.accounts.first()
+                if account:
+                    from decimal import Decimal
+                    try:
+                        account.balance = Decimal(new_balance.replace(',', '.'))
+                        account.save()
+                        messages.success(request, "Saldo atualizado com sucesso!")
+                    except Exception as e:
+                        messages.error(request, "Valor inválido para o saldo.")
+            return redirect('settings')
+
     # Categorias do usuário
     categories = Category.objects.filter(
         models.Q(user=request.user) | models.Q(is_default=True)
