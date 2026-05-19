@@ -102,6 +102,12 @@ class Sale(models.Model):
         self.remaining_amount = self.total_amount - self.paid_amount
         if self.remaining_amount <= 0:
             self.status = 'paid'
+        else:
+            if self.paid_amount > 0:
+                self.status = 'partial'
+            else:
+                if self.status == 'paid':
+                    self.status = 'pending'
         super().save(*args, **kwargs)
 
 class SaleInstallment(models.Model):
