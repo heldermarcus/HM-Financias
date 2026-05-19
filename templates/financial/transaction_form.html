@@ -133,6 +133,15 @@
                                     saleDiv.style.display = 'block';
                                     if (currentSelected) {
                                         saleSelect.dispatchEvent(new Event('change'));
+                                    } else if (data.sales.length === 1 && customerSelect.value) {
+                                        // Auto-select if there's only 1 pending sale for this customer
+                                        saleSelect.value = data.sales[0].id;
+                                        saleSelect.dispatchEvent(new Event('change'));
+                                    } else if (data.sales.length > 1 && customerSelect.value) {
+                                        // Multiple sales: show a small hint if needed
+                                        saleInfoCard.style.display = 'block';
+                                        saleDebtValue.innerHTML = '<span style="font-size:0.9rem; color:#b45309;">Selecione qual venda deseja debitar</span>';
+                                        btnPayTotal.style.display = 'none';
                                     }
                                 } else {
                                     saleDiv.style.display = 'none';
@@ -162,13 +171,20 @@
                         
                         if (sale) {
                             saleInfoCard.style.display = 'block';
-                            saleDebtValue.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(sale.remaining);
+                            saleDebtValue.innerHTML = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(sale.remaining);
                             
+                            btnPayTotal.style.display = 'block';
                             btnPayTotal.onclick = function() {
                                 amountInput.value = sale.remaining;
                             };
                         } else {
-                            saleInfoCard.style.display = 'none';
+                            if (currentSales.length > 1 && customerSelect.value) {
+                                saleInfoCard.style.display = 'block';
+                                saleDebtValue.innerHTML = '<span style="font-size:0.9rem; color:#b45309;">Selecione qual venda deseja debitar</span>';
+                                btnPayTotal.style.display = 'none';
+                            } else {
+                                saleInfoCard.style.display = 'none';
+                            }
                         }
                     });
                 }

@@ -23,7 +23,7 @@ class TransactionForm(forms.ModelForm):
                 
                 # Carrega todas as vendas abertas da loja para o queryset, 
                 # pois agora o usuário pode selecionar a venda mesmo sem cliente
-                self.fields['sale'].queryset = Sale.objects.filter(store=store).exclude(status='paid')
+                self.fields['sale'].queryset = Sale.objects.filter(store=store, remaining_amount__gt=0)
 
     def clean(self):
         cleaned_data = super().clean()

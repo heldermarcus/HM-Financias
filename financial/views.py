@@ -225,9 +225,9 @@ def transaction_history_api(request, pk):
 def get_customer_sales(request, customer_id):
     store = request.user.stores.first()
     if customer_id == 0:
-        sales = Sale.objects.filter(store=store).exclude(status='paid')
+        sales = Sale.objects.filter(store=store, remaining_amount__gt=0)
     else:
-        sales = Sale.objects.filter(customer_id=customer_id, store=store).exclude(status='paid')
+        sales = Sale.objects.filter(customer_id=customer_id, store=store, remaining_amount__gt=0)
     data = []
     for s in sales:
         customer_name = s.customer.name if s.customer else 'Sem cliente'
