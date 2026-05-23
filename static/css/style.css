@@ -635,3 +635,108 @@ h1, h2, h3, h4, h5, h6, .page-title h1, .dash-card-value {
 .text-center { text-align: center; }
 .fw-600 { font-weight: 600; }
 .fw-700 { font-weight: 700; }
+
+/* =======================================
+   MODERN FORMS UX/UI
+   ======================================= */
+/* Container styling for forms */
+article.card {
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.04), 0 4px 10px rgba(0, 0, 0, 0.02) !important;
+    border-radius: 20px !important;
+    padding: 2.5rem !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+article.card:hover {
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.06), 0 5px 15px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Inputs, Selects, Textareas */
+input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]), select, textarea {
+    background-color: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 12px !important;
+    padding: 0.85rem 1.2rem !important;
+    font-size: 0.95rem !important;
+    color: #334155 !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.01) !important;
+}
+
+/* Focus States */
+input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):focus, select:focus, textarea:focus {
+    background-color: #FFFFFF !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 4px rgba(56, 178, 172, 0.15) !important;
+    outline: none !important;
+    transform: translateY(-2px);
+}
+
+/* Form Labels */
+label {
+    font-weight: 600 !important;
+    color: #475569 !important;
+    font-size: 0.9rem !important;
+    margin-bottom: 0.5rem !important;
+    display: inline-block;
+    letter-spacing: 0.2px;
+}
+
+/* Primary Buttons */
+button[type="submit"], .grid button {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    padding: 0.85rem 2rem !important;
+    box-shadow: 0 4px 12px rgba(56, 178, 172, 0.25) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.9rem !important;
+    color: white !important;
+    cursor: pointer;
+}
+
+button[type="submit"]:hover, .grid button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 20px rgba(56, 178, 172, 0.4) !important;
+    filter: brightness(1.05);
+}
+
+button[type="submit"]:active, .grid button:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 6px rgba(56, 178, 172, 0.3) !important;
+}
+
+/* Secondary/Outline Buttons */
+a[role="button"].outline.secondary {
+    border: 2px solid #CBD5E1 !important;
+    color: #64748B !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+    background: transparent !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+a[role="button"].outline.secondary:hover {
+    background-color: #F1F5F9 !important;
+    border-color: #94A3B8 !important;
+    color: #475569 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Help text / subtext */
+.form-text {
+    font-size: 0.8rem !important;
+    color: #94A3B8 !important;
+    margin-top: 0.3rem !important;
+}
